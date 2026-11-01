@@ -6,15 +6,43 @@
 class Blessh < Formula
   desc "SSH over Bluetooth Low Energy"
   homepage "https://github.com/lomalkin/blessh"
-  url "https://github.com/lomalkin/blessh/releases/download/blessh-v0.2.1/blessh-0.2.1-macos.tar.gz"
-  version "0.2.1"
-  sha256 "922d0d5ff2aa034d6dedb49e62d3c402ddd0f22293addf1b652ea422f4378988"
+  url "https://github.com/lomalkin/blessh/releases/download/blessh-v0.2.2/blessh-0.2.2-macos.tar.gz"
+  sha256 "a20c5243d7f5138f6b6919ff96fe2b6aba45ef288c146287e6b5fdd05256f6fc"
   license "BSD-2-Clause"
 
   depends_on :macos
 
+  # macOS keys the Bluetooth permission of a program outside an app bundle
+  # to its path, and Homebrew's path changes with every version. blessh
+  # therefore runs from a copy at a path that stays: bin/blessh is a wrapper
+  # that starts it, and installs, upgrades and the wrapper refresh it by
+  # renaming a new copy over it (never rewriting the signed file in place).
+  def stable_path
+    var/"lib/blessh/blessh"
+  end
+
   def install
-    bin.install "blessh"
+    libexec.install "blessh"
+    (bin/"blessh").write <<~SH
+      #!/bin/sh
+      # Runs blessh from #{stable_path}; see the formula.
+      stable="#{stable_path}"
+      if ! cmp -s "#{opt_libexec}/blessh" "$stable"; then
+        tmp="$stable.new.$$"
+        if ! { mkdir -p "${stable%/*}" && cp "#{opt_libexec}/blessh" "$tmp" && mv -f "$tmp" "$stable"; }; then
+          rm -f "$tmp"
+          exec "#{opt_libexec}/blessh" "$@"
+        fi
+      fi
+      exec "$stable" "$@"
+    SH
+    chmod 0755, bin/"blessh"
+  end
+
+  post_install_steps do
+    mkdir_p "lib/blessh", base: :var
+    copy "blessh", "lib/blessh/blessh.new", source_base: :libexec, target_base: :var
+    move "lib/blessh/blessh.new", "lib/blessh/blessh", source_base: :var, target_base: :var
   end
 
   service do
@@ -42,6 +70,7 @@ class Blessh < Formula
 
   test do
     assert_match "blessh #{version}", shell_output("#{bin}/blessh --version")
+    assert_match "blessh #{version}", shell_output("#{libexec}/blessh --version")
     assert_match "blessh server", shell_output("#{bin}/blessh server --help")
   end
 end
