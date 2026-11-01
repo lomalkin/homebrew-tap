@@ -6,8 +6,8 @@
 class Blessh < Formula
   desc "SSH over Bluetooth Low Energy"
   homepage "https://github.com/lomalkin/blessh"
-  url "https://github.com/lomalkin/blessh/releases/download/blessh-v0.2.4/blessh-0.2.4-macos.tar.gz"
-  sha256 "d783387b539975c6863de55458d3041a4101fecedb3ac5f2c9ed456173cee019"
+  url "https://github.com/lomalkin/blessh/releases/download/blessh-v0.2.5/blessh-0.2.5-macos.tar.gz"
+  sha256 "527dd09415684de0f91e6822891e65c1bdc5a29399fad0035342f27bf6b2cd89"
   license "BSD-2-Clause"
 
   depends_on :macos
